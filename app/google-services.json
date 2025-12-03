@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "527656289716",
+    "project_id": "painel-de-votacao-decbb",
+    "storage_bucket": "painel-de-votacao-decbb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:527656289716:android:1c5ed4b958cb3f28385ee1",
+        "android_client_info": {
+          "package_name": "com.example.a3_paineldevotao"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMsD1FGhlCjqSk3YtisBgJlGVEJ9yTbg0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:527656289716:android:00bb3a2691ce3774385ee1",
+        "android_client_info": {
+          "package_name": "com.example.a3_teste_paineldevotao"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMsD1FGhlCjqSk3YtisBgJlGVEJ9yTbg0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
