@@ -26,6 +26,8 @@ public class Enquete {
     private String textoOpcaoA;
     private String textoOpcaoB;
     private String textoOpcaoC;
+    private String mensagemRodape;
+    private String dataHoraEncerramento; // formato sugerido: "yyyy-MM-dd HH:mm"
 
     // =====================================================================
     //  Contadores de votos
@@ -104,6 +106,22 @@ public class Enquete {
         this.textoOpcaoC = textoOpcaoC;
     }
 
+    public String getMensagemRodape() {
+        return mensagemRodape;
+    }
+
+    public void setMensagemRodape(String mensagemRodape) {
+        this.mensagemRodape = mensagemRodape;
+    }
+
+    public String getDataHoraEncerramento() {
+        return dataHoraEncerramento;
+    }
+
+    public void setDataHoraEncerramento(String dataHoraEncerramento) {
+        this.dataHoraEncerramento = dataHoraEncerramento;
+    }
+
     public long getOpcaoA() {
         return opcaoA;
     }
@@ -148,6 +166,8 @@ public class Enquete {
         dados.put("textoOpcaoA", textoOpcaoA);
         dados.put("textoOpcaoB", textoOpcaoB);
         dados.put("textoOpcaoC", textoOpcaoC);
+        dados.put("mensagemRodape", mensagemRodape);
+        dados.put("dataHoraEncerramento", dataHoraEncerramento);
 
         dados.put("opcaoA", opcaoA);
         dados.put("opcaoB", opcaoB);

@@ -1,10 +1,12 @@
 package com.example.a3_teste_paineldevotao.data;
 
 import android.content.Context;
+import android.os.Build;
 
 import androidx.annotation.Nullable;
 
 import com.example.a3_teste_paineldevotao.model.Enquete;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -95,6 +97,8 @@ public class EnqueteRepository {
             enquete.setTextoOpcaoA(snapshot.getString("textoOpcaoA"));
             enquete.setTextoOpcaoB(snapshot.getString("textoOpcaoB"));
             enquete.setTextoOpcaoC(snapshot.getString("textoOpcaoC"));
+            enquete.setMensagemRodape(snapshot.getString("mensagemRodape"));
+            enquete.setDataHoraEncerramento(snapshot.getString("dataHoraEncerramento"));
 
             // Contadores podem ser nulos, então tratamos para evitar NullPointerException
             Long a = snapshot.getLong("opcaoA");
@@ -137,6 +141,8 @@ public class EnqueteRepository {
                     enquete.setTextoOpcaoA(snapshot.getString("textoOpcaoA"));
                     enquete.setTextoOpcaoB(snapshot.getString("textoOpcaoB"));
                     enquete.setTextoOpcaoC(snapshot.getString("textoOpcaoC"));
+                    enquete.setMensagemRodape(snapshot.getString("mensagemRodape"));
+                    enquete.setDataHoraEncerramento(snapshot.getString("dataHoraEncerramento"));
 
                     Long a = snapshot.getLong("opcaoA");
                     Long b = snapshot.getLong("opcaoB");
@@ -169,6 +175,8 @@ public class EnqueteRepository {
                                     String opcaoA,
                                     String opcaoB,
                                     String opcaoC,
+                                    @Nullable String mensagemRodape,
+                                    @Nullable String dataHoraEncerramento,
                                     OperacaoCallback callback) {
 
         Map<String, Object> dados = new HashMap<>();
@@ -176,6 +184,8 @@ public class EnqueteRepository {
         dados.put("textoOpcaoA", opcaoA);
         dados.put("textoOpcaoB", opcaoB);
         dados.put("textoOpcaoC", opcaoC);
+        dados.put("mensagemRodape", mensagemRodape);
+        dados.put("dataHoraEncerramento", dataHoraEncerramento);
 
         // merge() apenas atualiza estes campos, mantendo os demais (contadores, etc.)
         enqueteRef.set(dados, SetOptions.merge())
@@ -201,8 +211,10 @@ public class EnqueteRepository {
                     String opcaoA = snapshot.getString("textoOpcaoA");
                     String opcaoB = snapshot.getString("textoOpcaoB");
                     String opcaoC = snapshot.getString("textoOpcaoC");
+                    String mensagemRodape = snapshot.getString("mensagemRodape");
+                    String dataHoraEncerramento = snapshot.getString("dataHoraEncerramento");
 
-                    callback.onConfiguracaoCarregada(titulo, opcaoA, opcaoB, opcaoC);
+                    callback.onConfiguracaoCarregada(titulo, opcaoA, opcaoB, opcaoC, mensagemRodape, dataHoraEncerramento);
                 })
                 .addOnFailureListener(callback::onErro);
     }
@@ -212,10 +224,11 @@ public class EnqueteRepository {
     // =====================================================================
 
     /**
-     * Verifica, no Firestore, qual opção o usuário já votou (se é que já votou).
-     * Se não houver voto registrado, o callback recebe null.
+     * Verifica, no Firestore, qual opção o usuário já votou (se é que já votou) e retorna
+     * metadados do voto (timestamp e UID/docId). Se não houver voto, retorna null.
+     * Leitura pontual (ex.: chamada no onResume da tela de votação).
      *
-     * @param callback callback com a opção (“A”, “B”, “C”) ou null
+     * @param callback callback com informações do voto ou null
      */
     public void carregarVotoUsuario(VotoUsuarioCallback callback) {
         DocumentReference votoRef = firebaseManager.getUserVoteRef();
@@ -229,8 +242,13 @@ public class EnqueteRepository {
         votoRef.get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot != null && snapshot.exists()) {
-                        String opcao = snapshot.getString("opcaoEscolhida");
-                        callback.onVotoCarregado(opcao);
+                        VotoUsuarioInfo info = new VotoUsuarioInfo();
+                        info.opcaoEscolhida = snapshot.getString("opcaoEscolhida");
+                        info.timestamp = snapshot.getTimestamp("timestamp");
+                        info.voterId = firebaseManager.getCurrentVoterId();
+                        info.deviceModel = snapshot.getString("deviceModel");
+                        info.androidVersion = snapshot.getString("androidVersion");
+                        callback.onVotoCarregado(info);
                     } else {
                         callback.onVotoCarregado(null);
                     }
@@ -276,6 +294,9 @@ public class EnqueteRepository {
                                 Map<String, Object> voto = new HashMap<>();
                                 voto.put("opcaoEscolhida", opcao);
                                 voto.put("timestamp", FieldValue.serverTimestamp());
+                                // Metadados do dispositivo úteis para suporte/estatísticas
+                                voto.put("deviceModel", Build.MODEL);
+                                voto.put("androidVersion", Build.VERSION.RELEASE);
 
                                 votoRef.set(voto)
                                         .addOnSuccessListener(unused2 -> callback.onVotoRegistrado(opcao))
@@ -315,7 +336,16 @@ public class EnqueteRepository {
                             .addOnSuccessListener(querySnapshot -> {
                                 querySnapshot.getDocuments()
                                         .forEach(doc -> doc.getReference().delete());
-                                callback.onSucesso();
+
+                                // Registra um log do reset na subcoleção "logs"
+                                Map<String, Object> log = new HashMap<>();
+                                log.put("timestamp", FieldValue.serverTimestamp());
+                                log.put("tipo", "reset_votacao");
+                                log.put("observacao", "reset solicitado pelo professor em sala");
+                                enqueteRef.collection("logs")
+                                        .add(log)
+                                        .addOnSuccessListener(ref -> callback.onSucesso())
+                                        .addOnFailureListener(callback::onErro);
                             })
                             .addOnFailureListener(callback::onErro);
 
@@ -326,6 +356,17 @@ public class EnqueteRepository {
     // =====================================================================
     //  Interfaces de callback
     // =====================================================================
+
+    /**
+     * Informações do voto do usuário retornadas em leitura pontual.
+     */
+    public static class VotoUsuarioInfo {
+        @Nullable public String opcaoEscolhida;
+        @Nullable public Timestamp timestamp;
+        @Nullable public String voterId;
+        @Nullable public String deviceModel;
+        @Nullable public String androidVersion;
+    }
 
     /**
      * Listener para receber atualizações em tempo real da enquete.
@@ -352,7 +393,9 @@ public class EnqueteRepository {
         void onConfiguracaoCarregada(String titulo,
                                      String opcaoA,
                                      String opcaoB,
-                                     String opcaoC);
+                                     String opcaoC,
+                                     @Nullable String mensagemRodape,
+                                     @Nullable String dataHoraEncerramento);
 
         void onErro(@Nullable Exception e);
     }
@@ -370,7 +413,7 @@ public class EnqueteRepository {
      * Callback para informar qual opção o usuário já votou (ou null).
      */
     public interface VotoUsuarioCallback {
-        void onVotoCarregado(@Nullable String opcao);
+        void onVotoCarregado(@Nullable VotoUsuarioInfo info);
     }
 
     /**

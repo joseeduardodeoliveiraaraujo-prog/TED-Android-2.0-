@@ -8,6 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,7 +25,12 @@ import com.example.a3_teste_paineldevotao.data.FirebaseManager;
 import com.example.a3_teste_paineldevotao.model.Enquete;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.ListenerRegistration;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Tela principal do aplicativo (Painel de Votação).
@@ -44,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "PainelVotacao";
 
+    private Enquete enqueteAtual; // mantemos a última enquete para validações locais
+
     // =====================================================================
     //  Componentes de interface
     // =====================================================================
@@ -57,6 +65,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtTotalC;
     private TextView txtTotalGeral;
     private TextView txtSeuVoto;
+    private TextView txtDataVoto;
+    private TextView txtUid;
+    private TextView txtDeviceModel;
+    private TextView txtAndroidVersion;
+    private TextView txtRodape;
 
     private Button btnVotarA;
     private Button btnVotarB;
@@ -177,6 +190,28 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, ConfigurarEnqueteActivity.class);
             startActivity(intent);
             return true;
+        } else if (item.getItemId() == R.id.menu_lista_votantes) {
+            // Protegido pela mesma senha usada no reset
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Acesso do professor");
+            builder.setMessage("Digite o código do professor:");
+
+            final EditText input = new EditText(this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            builder.setView(input);
+
+            builder.setPositiveButton("Confirmar", (dialog, which) -> {
+                if ("1234".equals(input.getText().toString().trim())) {
+                    Intent intent = new Intent(MainActivity.this, ListaVotantesActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "Código incorreto.", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
+            builder.show();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -207,6 +242,11 @@ public class MainActivity extends AppCompatActivity {
         txtTotalC = findViewById(R.id.txtTotalC);
         txtTotalGeral = findViewById(R.id.txtTotalGeral);
         txtSeuVoto = findViewById(R.id.txtSeuVoto);
+        txtDataVoto = findViewById(R.id.txtDataVoto);
+        txtUid = findViewById(R.id.txtUid);
+        txtDeviceModel = findViewById(R.id.txtDeviceModel);
+        txtAndroidVersion = findViewById(R.id.txtAndroidVersion);
+        txtRodape = findViewById(R.id.txtRodape);
 
         btnVotarA = findViewById(R.id.btnVotarA);
         btnVotarB = findViewById(R.id.btnVotarB);
@@ -298,6 +338,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void atualizarUIComEnquete(Enquete enquete) {
         if (enquete == null) return;
+        this.enqueteAtual = enquete;
 
         // Textos dinâmicos
         if (enquete.getTituloEnquete() != null) {
@@ -326,19 +367,46 @@ public class MainActivity extends AppCompatActivity {
         txtTotalB.setText("Opção B: " + votosB + " votos (" + percB + "%)");
         txtTotalC.setText("Opção C: " + votosC + " votos (" + percC + "%)");
         txtTotalGeral.setText("Total de votos: " + total);
+
+        // Mensagem de rodapé (se existir)
+        String rodape = enquete.getMensagemRodape();
+        if (rodape != null && !rodape.trim().isEmpty()) {
+            txtRodape.setText(rodape);
+        } else {
+            txtRodape.setText("");
+        }
     }
 
     /**
      * Carrega do Firestore qual opção o usuário já votou (se houver)
-     * e atualiza o texto "Seu voto".
+     * e atualiza os textos "Seu voto", "Data do voto" e "Seu UID".
+     * Leitura pontual: chamada no onResume para refletir o estado atual
+     * sem manter um listener dedicado para esses dados.
      */
     private void carregarVotoUsuario() {
-        enqueteRepository.carregarVotoUsuario(opcao -> {
-            if (opcao != null) {
-                txtSeuVoto.setText("Seu voto: opção " + opcao);
+        enqueteRepository.carregarVotoUsuario(info -> {
+            if (info != null && info.opcaoEscolhida != null) {
+                txtSeuVoto.setText("Seu voto: opção " + info.opcaoEscolhida);
             } else {
                 txtSeuVoto.setText("Seu voto: ainda não votou");
             }
+
+            // Formata Timestamp -> Date -> String legível
+            String dataFormatada = "—";
+            if (info != null && info.timestamp != null) {
+                Date d = info.timestamp.toDate(); // conforme requisito
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+                dataFormatada = sdf.format(d);
+            }
+            txtDataVoto.setText("Data do voto: " + dataFormatada);
+
+            String uidText = (info != null && info.voterId != null) ? info.voterId : "—";
+            txtUid.setText("Seu UID: " + uidText);
+
+            String modelText = (info != null && info.deviceModel != null) ? info.deviceModel : "—";
+            String verText = (info != null && info.androidVersion != null) ? info.androidVersion : "—";
+            txtDeviceModel.setText("Modelo: " + modelText);
+            txtAndroidVersion.setText("Android: " + verText);
         });
     }
 
@@ -360,6 +428,28 @@ public class MainActivity extends AppCompatActivity {
      * Envia a opção selecionada para o EnqueteRepository registrar o voto.
      */
     private void registrarVoto(String opcao) {
+        // Verificação local de encerramento da votação com base no horário do dispositivo.
+        // Em sistemas reais, o ideal é usar horário do servidor para evitar inconsistências.
+        if (enqueteAtual != null && enqueteAtual.getDataHoraEncerramento() != null) {
+            String fimStr = enqueteAtual.getDataHoraEncerramento().trim();
+            if (!fimStr.isEmpty()) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+                    Date fim = sdf.parse(fimStr);
+                    if (fim != null && (new Date().equals(fim) || new Date().after(fim))) {
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Votação encerrada pelo professor.",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        txtSeuVoto.setText("Votação encerrada.");
+                        return;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
         enqueteRepository.registrarVoto(opcao, new EnqueteRepository.RegistrarVotoCallback() {
             @Override
             public void onVotoRegistrado(String opcaoRegistrada) {

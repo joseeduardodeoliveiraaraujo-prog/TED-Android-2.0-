@@ -36,6 +36,8 @@ public class ConfigurarEnqueteActivity extends AppCompatActivity {
     private EditText edtOpcaoA;
     private EditText edtOpcaoB;
     private EditText edtOpcaoC;
+    private EditText edtMensagemRodape;
+    private EditText edtDataHoraEncerramento;
     private Button btnSalvarConfig;
 
     // Repositório centraliza toda a lógica de Firestore
@@ -124,6 +126,8 @@ public class ConfigurarEnqueteActivity extends AppCompatActivity {
         edtOpcaoA = findViewById(R.id.edtOpcaoA);
         edtOpcaoB = findViewById(R.id.edtOpcaoB);
         edtOpcaoC = findViewById(R.id.edtOpcaoC);
+        edtMensagemRodape = findViewById(R.id.edtMensagemRodape);
+        edtDataHoraEncerramento = findViewById(R.id.edtDataHoraEncerramento);
         btnSalvarConfig = findViewById(R.id.btnSalvarConfig);
     }
 
@@ -141,7 +145,9 @@ public class ConfigurarEnqueteActivity extends AppCompatActivity {
             public void onConfiguracaoCarregada(String titulo,
                                                 String opcaoA,
                                                 String opcaoB,
-                                                String opcaoC) {
+                                                String opcaoC,
+                                                String mensagemRodape,
+                                                String dataHoraEncerramento) {
 
                 if (titulo != null) {
                     edtTituloEnquete.setText(titulo);
@@ -154,6 +160,12 @@ public class ConfigurarEnqueteActivity extends AppCompatActivity {
                 }
                 if (opcaoC != null) {
                     edtOpcaoC.setText(opcaoC);
+                }
+                if (mensagemRodape != null) {
+                    edtMensagemRodape.setText(mensagemRodape);
+                }
+                if (dataHoraEncerramento != null) {
+                    edtDataHoraEncerramento.setText(dataHoraEncerramento);
                 }
             }
 
@@ -185,6 +197,8 @@ public class ConfigurarEnqueteActivity extends AppCompatActivity {
             String opcaoA = edtOpcaoA.getText().toString().trim();
             String opcaoB = edtOpcaoB.getText().toString().trim();
             String opcaoC = edtOpcaoC.getText().toString().trim();
+            String mensagemRodape = edtMensagemRodape.getText().toString().trim();
+            String dataHoraEnc = edtDataHoraEncerramento.getText().toString().trim();
 
             // Validações simples para evitar salvar dados incompletos
             if (titulo.isEmpty()) {
@@ -205,12 +219,37 @@ public class ConfigurarEnqueteActivity extends AppCompatActivity {
                 return;
             }
 
+            // Validação de data/hora de encerramento (se preenchida), não pode ser no passado
+            if (!dataHoraEnc.isEmpty()) {
+                try {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault());
+                    java.util.Date fim = sdf.parse(dataHoraEnc);
+                    if (fim != null && new java.util.Date().after(fim)) {
+                        Toast.makeText(
+                                this,
+                                "A data/hora de encerramento não pode estar no passado.",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(
+                            this,
+                            "Data/hora inválida. Use o formato: 2025-12-02 20:00",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    return;
+                }
+            }
+
             // Chama o repositório para salvar no Firestore
             enqueteRepository.salvarConfiguracoes(
                     titulo,
                     opcaoA,
                     opcaoB,
                     opcaoC,
+                    mensagemRodape.isEmpty() ? null : mensagemRodape,
+                    dataHoraEnc.isEmpty() ? null : dataHoraEnc,
                     new EnqueteRepository.OperacaoCallback() {
                         @Override
                         public void onSucesso() {

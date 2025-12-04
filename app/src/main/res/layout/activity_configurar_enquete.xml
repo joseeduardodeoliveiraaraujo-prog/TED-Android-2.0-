@@ -131,6 +131,48 @@
             android:textColor="#0D47A1"
             android:textColorHint="#5472B2" />
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mensagem de rodapé:"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#212121" />
+
+        <EditText
+            android:id="@+id/edtMensagemRodape"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex.: Votação válida até 20h."
+            android:layout_marginTop="4dp"
+            android:textColor="#0D47A1"
+            android:textColorHint="#5472B2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Data/hora de encerramento:"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:layout_marginTop="12dp" />
+
+        <EditText
+            android:id="@+id/edtDataHoraEncerramento"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Formato: 2025-12-02 20:00"
+            android:layout_marginTop="4dp"
+            android:textColor="#0D47A1"
+            android:textColorHint="#5472B2" />
+
         <Button
             android:id="@+id/btnSalvarConfig"
             android:layout_width="match_parent"

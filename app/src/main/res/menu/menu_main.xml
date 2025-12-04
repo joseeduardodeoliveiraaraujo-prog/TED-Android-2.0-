@@ -7,4 +7,9 @@
         android:title="Configurar enquete"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_lista_votantes"
+        android:title="Lista de votantes"
+        app:showAsAction="never" />
+
 </menu>

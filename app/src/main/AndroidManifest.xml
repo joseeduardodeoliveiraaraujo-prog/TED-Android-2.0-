@@ -20,6 +20,11 @@
             android:label="Configurar enquete" />
 
         <activity
+            android:name=".ListaVotantesActivity"
+            android:exported="false"
+            android:label="Lista de votantes" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="">

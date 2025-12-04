@@ -64,6 +64,17 @@ public class FirebaseManager {
     }
 
     /**
+     * Retorna o identificador atual usado como chave do documento de voto.
+     * Se houver usuário autenticado, usa o UID. Caso contrário, usa o ANDROID_ID.
+     */
+    public String getCurrentVoterId() {
+        if (auth.getCurrentUser() != null) {
+            return auth.getCurrentUser().getUid();
+        }
+        return voterId;
+    }
+
+    /**
      * Retorna a referência do voto para o "usuário" atual (identificado por dispositivo).
      * Estrutura:
      *   enquetes/enquete_geral/votos/{ANDROID_ID}

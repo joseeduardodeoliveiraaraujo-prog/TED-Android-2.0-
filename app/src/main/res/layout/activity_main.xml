@@ -177,6 +177,43 @@
             android:textColor="#616161"
             android:textSize="14sp" />
 
+        <!-- Informações adicionais sobre o voto do usuário -->
+        <TextView
+            android:id="@+id/txtDataVoto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="Data do voto: —"
+            android:textColor="#616161"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/txtUid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Seu UID: —"
+            android:textColor="#616161"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/txtDeviceModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="Modelo: —"
+            android:textColor="#616161"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/txtAndroidVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Android: —"
+            android:textColor="#616161"
+            android:textSize="14sp" />
+
         <!-- Botão para o professor zerar votos -->
         <Button
             android:id="@+id/btnReset"
@@ -191,6 +228,16 @@
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />
+
+        <!-- Rodapé configurável (mensagem dinâmica) -->
+        <TextView
+            android:id="@+id/txtRodape"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text=""
+            android:textColor="#455A64"
+            android:textSize="13sp" />
 
     </LinearLayout>
 
