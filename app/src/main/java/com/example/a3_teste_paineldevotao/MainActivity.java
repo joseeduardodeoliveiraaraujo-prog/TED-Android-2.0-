@@ -235,11 +235,16 @@ public class MainActivity extends AppCompatActivity {
                         ).show();
                         configurarPosLogin();
                     } else {
-                        Toast.makeText(
-                                MainActivity.this,
-                                "Erro ao conectar.",
-                                Toast.LENGTH_LONG
-                        ).show();
+                        Exception ex = task.getException();
+                        String msg = (ex != null && ex.getMessage() != null)
+                                ? ex.getMessage()
+                                : "Erro desconhecido ao conectar.";
+                        if (ex instanceof com.google.firebase.auth.FirebaseAuthException) {
+                            String code = ((com.google.firebase.auth.FirebaseAuthException) ex).getErrorCode();
+                            msg = "Auth falhou (" + code + "): " + msg;
+                        }
+                        Log.e(TAG, "Falha no login anônimo: ", ex);
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
                     }
                 });
     }

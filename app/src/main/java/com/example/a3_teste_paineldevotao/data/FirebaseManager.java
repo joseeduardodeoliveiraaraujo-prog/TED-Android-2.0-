@@ -1,6 +1,7 @@
 package com.example.a3_teste_paineldevotao.data;
 
 import android.content.Context;
+import android.provider.Settings;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
@@ -8,50 +9,39 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 /**
- * Centraliza toda a inicialização e acesso ao Firebase.
+ * FirebaseManager simplificado para gravação anônima.
  *
- * Responsabilidades:
- * - Garantir que o Firebase seja inicializado apenas uma vez.
- * - Fornecer instâncias de FirebaseAuth e FirebaseFirestore.
- * - Expor a referência principal da enquete.
- * - Expor a referência do documento de voto do usuário atual.
+ * - Não usa FirebaseAuth (não é necessário para votos anônimos).
+ * - Sempre retorna a referência da enquete principal.
+ * - Sempre cria um novo documento automático na coleção "votos".
  *
- * A ideia é que as Activities/Repositories não precisem lidar diretamente
- * com inicialização do Firebase, apenas chamem este manager.
+ * Estrutura no Firestore:
+ *   enquetes/enquete_geral/votos/{id_gerado}
  */
 public class FirebaseManager {
 
     private static FirebaseManager instance;
 
-    // =====================================================================
-    //  Atributos principais do Firebase
-    // =====================================================================
-
-    private final FirebaseAuth auth;
     private final FirebaseFirestore db;
     private final DocumentReference enqueteRef;
+    private final String voterId;
+    private final FirebaseAuth auth;
 
-    /**
-     * Construtor privado para forçar o uso do getInstance().
-     * Aqui fazemos a configuração inicial do Firebase.
-     */
     private FirebaseManager(Context context) {
-        // Garante que o Firebase esteja inicializado com o contexto da aplicação
         FirebaseApp.initializeApp(context.getApplicationContext());
-
-        // Instâncias principais
-        auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
-        // Documento principal da enquete (único para todo o app)
+        // Documento fixo da enquete
         enqueteRef = db.collection("enquetes").document("enquete_geral");
+
+        // Identificador estável do dispositivo para representar "um usuário"
+        voterId = Settings.Secure.getString(
+                context.getApplicationContext().getContentResolver(),
+                Settings.Secure.ANDROID_ID
+        );
     }
 
-    /**
-     * Retorna a instância única do FirebaseManager (padrão Singleton).
-     *
-     * @param context Context usado apenas na primeira inicialização.
-     */
     public static FirebaseManager getInstance(Context context) {
         if (instance == null) {
             instance = new FirebaseManager(context);
@@ -59,51 +49,51 @@ public class FirebaseManager {
         return instance;
     }
 
-    // =====================================================================
-    //  Getters de acesso aos serviços
-    // =====================================================================
+    /**
+     * Retorna referência do documento principal da enquete.
+     */
+    public DocumentReference getEnqueteRef() {
+        return enqueteRef;
+    }
 
     /**
-     * Retorna a instância do FirebaseAuth usada no app.
+     * Exponibiliza o FirebaseAuth para chamadas que ainda usam autenticação anônima.
      */
     public FirebaseAuth getAuth() {
         return auth;
     }
 
     /**
-     * Retorna a instância do FirebaseFirestore usada no app.
+     * Retorna a referência do voto para o "usuário" atual (identificado por dispositivo).
+     * Estrutura:
+     *   enquetes/enquete_geral/votos/{ANDROID_ID}
+     *
+     * Não depende de FirebaseAuth. Retorna sempre uma referência válida.
+     */
+    public DocumentReference getUserVoteRef() {
+        String docId;
+        if (auth.getCurrentUser() != null) {
+            docId = auth.getCurrentUser().getUid();
+        } else {
+            docId = voterId;
+        }
+        return enqueteRef.collection("votos").document(docId);
+    }
+
+    /**
+     * Gera um novo documento anônimo para salvar o voto.
+     *
+     * Exemplo de caminho gerado:
+     *   enquetes/enquete_geral/votos/abc123XYZ...
+     */
+    public DocumentReference createAnonymousVoteRef() {
+        return enqueteRef.collection("votos").document(); // Cria ID aleatório
+    }
+
+    /**
+     * Retorna a instância do Firestore caso você precise acessar manualmente.
      */
     public FirebaseFirestore getDb() {
         return db;
-    }
-
-    /**
-     * Retorna a referência do documento principal da enquete.
-     *
-     * Exemplo de caminho:
-     *  enquetes/enquete_geral
-     */
-    public DocumentReference getEnqueteRef() {
-        return enqueteRef;
-    }
-
-    // =====================================================================
-    //  Referência do voto do usuário
-    // =====================================================================
-
-    /**
-     * Retorna a referência do documento de voto do usuário atual,
-     * ou null se ainda não estiver logado.
-     *
-     * Estrutura esperada no Firestore:
-     *  enquetes/enquete_geral/votos/{uid_do_usuario}
-     */
-    public DocumentReference getUserVoteRef() {
-        if (auth.getCurrentUser() == null) {
-            return null;
-        }
-
-        String uid = auth.getCurrentUser().getUid();
-        return enqueteRef.collection("votos").document(uid);
     }
 }
