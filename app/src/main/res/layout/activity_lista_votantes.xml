@@ -4,35 +4,37 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E3F2FD"
-    android:padding="16dp">
+    android:background="#FAFAFA"> <com.google.android.material.appbar.MaterialToolbar
+    android:id="@+id/toolbarLista"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="#1976D2" app:titleTextColor="@android:color/white" />
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbarLista"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="#1565C0"
-        app:titleTextColor="@android:color/white" />
-
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAtualizar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Atualizar"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        app:backgroundTint="#4CAF50" app:cornerRadius="8dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="Atualizar Lista"
         android:textAllCaps="false"
-        android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:background="@drawable/bg_option_button"
-        android:layout_marginTop="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp" />
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
     <ListView
         android:id="@+id/listVotantes"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp" />
-
-</LinearLayout>
-
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="16dp"
+        android:dividerHeight="1dp"
+        android:divider="#EEEEEE" /> </LinearLayout>
